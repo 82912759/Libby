@@ -25,6 +25,15 @@ class File {
 	/**
 	 * 
 	 */
+	public function getPath ( ) {
+		
+		return $this->filepath;
+	}
+	
+	
+	/**
+	 * 
+	 */
 	public function isDir ( ) {
 		
 		return is_dir($this->filepath);

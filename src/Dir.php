@@ -41,13 +41,18 @@ class Dir extends Utility\IteratorBase {
 			if (!empty($params['regex']) AND !preg_match($params['regex'], $file)) {
 				continue;
 			}
-				
-			$this->items[]	=	new File($this->path . $file);
+			
+			if (is_dir($this->path . $file)) {
+				$this->items[]	=	new File($this->path . $file . '/');
+			}
+			else {	
+				$this->items[]	=	new File($this->path . $file);
+			}
 		}
 		
 		// sort($this->items);
 		
-		$this->itemCount	=	count($this->_items);
+		$this->itemCount	=	count($this->items);
 	}
 }
 ?>
