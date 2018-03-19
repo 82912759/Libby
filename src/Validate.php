@@ -35,5 +35,28 @@ class Validate {
 		
 		return @fsockopen("www.example.com", 80);		
 	}
+	
+	
+	/**
+	 * Validate post input
+	 */
+	public static function post ( $data, array $params = null ) {
+		
+		if (!is_array($data)) {
+			
+			$data	=	[
+				$data	
+			];
+		}
+						
+		foreach ($data as $key) {
+				
+			if (empty($_POST[$key])) {
+				throw new \Libby\Exception\Input('MissingPostData');
+			}
+		}
+		
+		return true;
+	}
 }
 ?>
