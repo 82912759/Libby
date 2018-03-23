@@ -72,6 +72,36 @@ class Month {
 	// Base methods
 	//
 	/**
+	 *
+	 */
+	public function getDateLast ( ) {
+	
+		$month = \Libby\Date::format($this->date, 'm');
+		$year = \Libby\Date::format($this->date, 'Y');
+			
+		$preMonth = ($month > 1) ? ($month - 1) : 12;
+		$preYear = ($month > 1) ? $year : ($year - 1);
+	
+		return $preYear . '-' . $preMonth . '-01';
+	}
+	
+	
+	/**
+	 *
+	 */
+	public function getDateNext ( ) {
+	
+		$month = \Libby\Date::format($this->date, 'm');
+		$year = \Libby\Date::format($this->date, 'Y');
+			
+		$nextMonth = ($month < 12) ? ($month + 1) : 1;
+		$nextYear = ($month < 12) ? $year : ($year + 1);
+	
+		return $nextYear . '-' . $nextMonth . '-01';
+	}
+	
+	
+	/**
 	 * 
 	 */
 	public function getDays ( array $params = null ) {
