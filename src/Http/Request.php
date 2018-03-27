@@ -40,8 +40,12 @@ class Request {
 		// curl_setopt($ch, CURLOPT_HTTPHEADER,		$headers);
 			
 		$result = curl_exec($ch);
-			
-		return $result;
+		
+		$header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+		$header = substr($result, 0, $header_size);
+		$body = substr($result, $header_size);
+		
+		return new Response($header, $body);
 	}
 }
 ?>
