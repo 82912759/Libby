@@ -38,6 +38,17 @@ class Validate {
 	
 	
 	/**
+	 * Validate any value
+	 */
+	public static function notEmpty ( $string ) {
+	    	
+	    if (empty($string)) {
+	        throw new Exception\Input('ExceptionValidateEmpty');
+	    }
+	}
+	
+	
+	/**
 	 * Validate post input
 	 */
 	public static function post ( $data, array $params = null ) {
