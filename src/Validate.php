@@ -69,5 +69,28 @@ class Validate {
 		
 		return true;
 	}
+	
+	
+	/**
+	 * Validate post input
+	 */
+	public static function postSingle ( $data, array $params = null ) {
+	
+	    if (!is_array($data)) {
+	
+	        $data	=	[
+	            $data
+	        ];
+	    }
+		
+	    foreach ($data as $key) {
+	
+	        if (!empty($_POST[$key])) {
+	            return true;
+	        }
+	    }
+	
+	    throw new \Libby\Exception\Input('MissingPostData');
+	}
 }
 ?>
