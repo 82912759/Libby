@@ -14,7 +14,7 @@ class Validate {
 	public static function email ( $email, array $params = null ) {
 		
 		if (!preg_match('#^(.*?)\@(.*?)\.([a-z0-9]{2,})$#i', $email)) {
-			throw new Exception\Input('ExceptionValidateEmail', $email);
+			throw new Exception\Input('ExceptionValidateEmail');
 		}
 		
 		if (empty($params['skipDns']) AND self::isOnline()) {
@@ -22,7 +22,7 @@ class Validate {
 			list($mbox, $server)	=	explode('@', $email);
 		
 			if (!checkdnsrr($server, 'MX') AND !checkdnsrr($server, 'A')) {
-				throw new Exception\Input('ExceptionValidateEmailDns', $email);
+				throw new Exception\Input('ExceptionValidateEmailDns');
 			}
 		}
 	}
