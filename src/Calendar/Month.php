@@ -22,10 +22,11 @@ class Month {
 		
 		$this->setDate($params['date']);
 		
+		$month = \Libby\Date::format($this->date, 'm');
+		$year = \Libby\Date::format($this->date, 'Y');
 		
-		if (!empty($params['fullWeeks'])) {
-			$month = \Libby\Date::format($this->date, 'm');
-			$year = \Libby\Date::format($this->date, 'Y');
+		
+		if (!empty($params['fullWeeks'])) {			
 			
 			$preMonth = ($month > 1) ? ($month - 1) : 12;
 			$preYear = ($month > 1) ? $year : ($year - 1);
@@ -51,7 +52,8 @@ class Month {
 			]);
 		}
 		
-		if (count($this->days) % 7 != 0) {
+		
+		if (!empty($params['fullWeeks']) and (count($this->days) % 7 != 0)) {
 			
 			$diff = 7 - (count($this->days) % 7);
 			
