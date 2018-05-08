@@ -38,6 +38,17 @@ class Validate {
 	
 	
 	/**
+	 * Validate maximum length
+	 */
+	public static function maxLength ( $string, $maxLength ) {
+		
+		if (strlen($string) > $maxLength) {
+			throw new ExceptionInput('ExceptionValidateMaxLength', $maxLength);
+		}
+	}
+	
+	
+	/**
 	 * Validate any value
 	 */
 	public static function notEmpty ( $string ) {
