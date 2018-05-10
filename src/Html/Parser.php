@@ -103,24 +103,37 @@ class Parser {
         
         $pathConverterToLocal = $this->pathConverterToLocal;
         
-        foreach ($this->scripts as $index => $script) {
+        $scripts = $this->scripts;
+        
+        $this->scriptsClear();
+        
+        foreach ($scripts as $index => $script) {
             
             $script['path'] = $pathConverterToLocal($script['file']);
             
-            if (!file_exists($script['path'])) {
+            if (!file_exists($script['path'])) {                
+                $this->scripts[] = $script;
                 continue;
             }
+            
+            /*
+            if ($script['type'] == 'stylesheet') {
+                p($script['path']);
+            }
+            */
             
             ${$script['type']} .= file_get_contents($script['path']) . PHP_EOL;
         }
         
-        $this->scriptsClear();
+        
+        
         
         if (!empty($stylesheet)) {
             
             if (is_callable($callback = $this->stylesheetParser)) {
-                
-                $stylesheet = $callback($stylesheet);                
+                           
+          //      d($stylesheet);
+                $stylesheet = $callback($stylesheet);
             }
             
             $this->scripts[] = [ 'type' => 'stylesheet', 'source' => $stylesheet, 'ext' => 'css' ];
@@ -149,12 +162,15 @@ class Parser {
     /**
      * 
      */
-    public function scriptsExtract ( ) {
-                        
+    public function scriptsExtract ( array $params = null ) {
+                               
         $document = new \DOMDocument;
         
         libxml_use_internal_errors(true);
-        $document->loadHTML(mb_convert_encoding('<div>' . $this->html . '</div>', 'HTML-ENTITIES', 'UTF-8'), LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        
+        $html = (substr($this->html, 0, 5) != '<!DOC') ? '<div>' . $this->html . '</div>' : $this->html; 
+        
+        $document->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'), LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
         libxml_clear_errors();  
         
         $xpath = new \DOMXPath($document);
@@ -167,6 +183,10 @@ class Parser {
                 continue;    
             }
             
+            if (!empty($params['localPath']) AND strpos($element->getAttribute('src'), $params['localPath']) === false) {
+                continue;
+            }
+                        
             $element->parentNode->removeChild($element);
             $this->scripts[] = [ 'type' => 'javascript', 'file' => $element->getAttribute('src'), 'ext' => 'js' ];
         }        
@@ -174,13 +194,21 @@ class Parser {
         $elements = $xpath->query('//link');
         
         foreach ($elements as $element) {
+            
+            if (!empty($params['localPath']) AND strpos($element->getAttribute('href'), $params['localPath']) === false) {
+                continue;
+            }
+            
+            if (!empty($element->getAttribute('rel') AND substr($element->getAttribute('rel'), 0, 10) != 'stylesheet')) {
+                continue;    
+            }            
+            
             $element->parentNode->removeChild($element);
             $this->scripts[] = [ 'type' => 'stylesheet', 'file' => $element->getAttribute('href'), 'ext' => 'css' ];
         }        
        
         $this->html = $document->saveHTML();
-        
-        
+                        
         return $this;        
     }
     
@@ -220,13 +248,17 @@ class Parser {
         
         foreach ($this->scripts as $index => $script) {
             
+            if (empty($script['source'])) {
+                continue;    
+            }
+            
             $npattern = str_replace('{type}', $script['type'], $pattern);
             $npattern = str_replace('{ext}', $script['ext'], $npattern);
             
             if (!file_exists($path = dirname($npattern))) {                
                 \Libby\Dir::create($path);
             }
-                        
+                            
             file_put_contents($npattern, $script['source']);
             
             $script['path'] = $npattern;
