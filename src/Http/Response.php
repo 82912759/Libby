@@ -12,7 +12,7 @@ class Response {
     /**
      * 
      */
-    public function __construct ( $headers, $body = null ) {
+    public function __construct ( array $headers = null, $body = null ) {
         
         $this->body = $body;
     }
