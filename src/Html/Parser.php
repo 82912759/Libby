@@ -222,13 +222,25 @@ class Parser {
                         
             switch ( $script['type'] ) {
                 
-                case 'stylesheet':                    
-                    $this->html .= PHP_EOL . '<link rel="stylesheet" type="text/css" href="' . $script['file'] . '" />';
+                case 'stylesheet':                   
+                    $tag = '<link rel="stylesheet" type="text/css" href="' . $script['file'] . '" />';                    
                 break;
                 
-                case 'javascript':
-                    $this->html .= PHP_EOL . '<script src="' . $script['file'] . '"></script>';
+                case 'javascript':                    
+                    $tag = '<script src="' . $script['file'] . '"></script>';
                 break;
+                
+                default:
+                    $tag = '<!-- unknown script type: ' . $script['type'] . ' -->';
+                break;
+            }
+            
+            
+            if (strpos($this->html, '</head>') !== false) {
+                $this->html = str_replace('</head>', PHP_EOL . $tag . PHP_EOL . '</head>', $this->html);
+            }
+            else {
+                $this->html .= PHP_EOL . $tag;
             }
         }
         
