@@ -54,5 +54,32 @@ class Dir extends Utility\IteratorBase {
 		
 		$this->itemCount	=	count($this->items);
 	}
+	
+	
+	//
+	// Static methods
+	//
+	/**
+	 * 
+	 */
+	public static function create ( $path ) {
+	    
+	    $segments = explode('/', $path);
+	    $npath = (string) null;
+	    
+	    foreach ($segments as $xseg) {
+	        
+	        if (empty($xseg)) {
+	            continue;
+	        }
+	        
+	        $npath .= '/' . $xseg;
+	        
+	        if (!file_exists($npath)) {
+	            
+	            mkdir($npath);
+	        }
+	    }	    
+	}
 }
 ?>
