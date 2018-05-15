@@ -70,7 +70,7 @@ class Url {
      */
     public function toString ( ) {
         
-        $url = $this->scheme . '://' . $this->host . $this->path;
+        $url = (!empty($this->scheme) ? $this->scheme . '://' : '//') .  $this->host . $this->path;
         
         
         if (!empty($this->queryData)) {
