@@ -102,14 +102,16 @@ class Parser {
         $javascript = (string) null;
         
         $pathConverterToLocal = $this->pathConverterToLocal;
-        
+                
         $scripts = $this->scripts;
         
         $this->scriptsClear();
         
         foreach ($scripts as $index => $script) {
             
-            $script['path'] = $pathConverterToLocal($script['file']);
+            if (is_callable($pathConverterToLocal)) {
+                $script['path'] = $pathConverterToLocal($script['file']);
+            }
             
             if (!file_exists($script['path'])) {                
                 $this->scripts[] = $script;
