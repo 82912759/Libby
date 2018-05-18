@@ -8,7 +8,7 @@ namespace Libby\Html;
 class Parser {
     
     protected $cachePattern = null;
-    protected $stylesheetParser = null;
+    protected $parser = [];
     protected $scripts = []; 
     protected $html;
     protected $pathConverterToLocal = null;
@@ -76,9 +76,9 @@ class Parser {
     /**
      * 
      */
-    public function setStylesheetParser ( $callback ) {
+    public function setParser ( $ext, $callback ) {
         
-        $this->stylesheetParser = $callback;
+        $this->parser[$ext] = $callback;
     }
     
     
@@ -98,52 +98,145 @@ class Parser {
      */
     public function scriptsCombine ( ) {
         
-        $stylesheet = (string) null;
-        $javascript = (string) null;
+        $this->scriptsExtract();
+                
+        $overallHash = $this->getScriptsHash();
+        
+        $cacheFileCss = $this->cachePattern;
+        $cacheFileCss = str_replace('{type}', 'stylesheet', $cacheFileCss);
+        $cacheFileCss = str_replace('{hash}', $overallHash, $cacheFileCss);
+        $cacheFileCss = str_replace('{ext}', 'css', $cacheFileCss);
+        
+        $cacheFileJs = $this->cachePattern;
+        $cacheFileJs = str_replace('{type}', 'javascript', $cacheFileJs);
+        $cacheFileJs = str_replace('{hash}', $overallHash, $cacheFileJs);
+        $cacheFileJs = str_replace('{ext}', 'js', $cacheFileJs);
+                
+        if (file_exists($cacheFileCss)) {
+            
+            $this->scriptsClear();
+            
+            $this->scripts[] = [
+                'ext' => 'css',
+                'type' => 'stylesheet',
+                'path' => $cacheFileCss
+            ];
+            
+            if (file_exists($cacheFileJs)) {
+                $this->scripts[] = [
+                    'ext' => 'js',
+                    'type' => 'javascript',
+                    'path' => $cacheFileJs
+                ];
+            }
+            
+            $this->scriptsInject();
+            
+            return $this;
+        }
+        
+        $sources = [];
         
         $pathConverterToLocal = $this->pathConverterToLocal;
                 
-        $scripts = $this->scripts;
         
-        $this->scriptsClear();
         
-        foreach ($scripts as $index => $script) {
+        foreach ($this->scripts as $script) {
             
             if (is_callable($pathConverterToLocal)) {
                 $script['path'] = $pathConverterToLocal($script['file']);
             }
             
-            if (!file_exists($script['path'])) {                
-                $this->scripts[] = $script;
-                continue;
+            // Get source from filesystem
+            if (isset($script['path']) AND file_exists($script['path'])) {
+                
+                $source = file_get_contents($script['path']);
+            }
+            // Get source from http
+            else {
+                
+                $source = file_get_contents($script['file']);
+            }            
+            
+            if (!isset($sources[$script['ext']])) {
+                $sources[$script['ext']] = [
+                    'ext' => $script['ext'],
+                    'type' => $script['type'],
+                    'source' => (string) null
+                ];
             }
             
-            /*
-            if ($script['type'] == 'stylesheet') {
-                p($script['path']);
-            }
-            */
+            $sources[$script['ext']]['source'] .= $source . PHP_EOL;
             
-            ${$script['type']} .= file_get_contents($script['path']) . PHP_EOL;
+        }
+        
+        $hash = 'pre-' . $this->getScriptsHash();
+        
+        $this->scriptsClear();
+                        
+        foreach ($sources as $extension => $script) {
+            
+            $file = $this->cachePattern;
+            $file = str_replace('{type}', $script['type'], $file);
+            $file = str_replace('{hash}', $hash, $file);
+            $file = str_replace('{ext}', $script['ext'], $file);
+            
+            file_put_contents($file, $script['source']);
+            
+            unset($script['source']);
+            $script['path'] = $file;
+            $this->scripts[] = $script;
+        }
+        
+        $this->scriptsInject();
+        
+        $this->scriptsExtract();
+        
+        $js = (string) null;
+        $css = (string) null;
+        
+        foreach ($this->scripts as $index => $script) {
+            
+            if (!empty($this->parser[$script['ext']])) {
+                $parser = $this->parser[$script['ext']];                
+                $script = $parser($script);
+            }
+            
+            if (empty($script['source'])) {
+                $script['source'] = file_get_contents($script['file']);
+            }
+            
+            ${$script['ext']} .= $script['source'];
+        }
+        
+        $this->scriptsClear();
+        
+        
+        
+        if (!empty($js)) {                
+                        
+            $this->scripts[] = [
+                'ext' => 'js',
+                'type' => 'javascript',
+                'path' => $cacheFileJs
+            ];
+            
+            file_put_contents($cacheFileJs, $js);
+        }
+        
+        if (!empty($css)) {
+        
+            $this->scripts[] = [
+                'ext' => 'css',
+                'type' => 'stylesheet',
+                'path' => $cacheFileCss
+            ];
+            
+            file_put_contents($cacheFileCss, $css);
         }
         
         
-        
-        
-        if (!empty($stylesheet)) {
-            
-            if (is_callable($callback = $this->stylesheetParser)) {
-                           
-          //      d($stylesheet);
-                $stylesheet = $callback($stylesheet);
-            }
-            
-            $this->scripts[] = [ 'type' => 'stylesheet', 'source' => $stylesheet, 'ext' => 'css' ];
-        }
-        
-        if (!empty($javascript)) {
-            $this->scripts[] = [ 'type' => 'javascript', 'source' => $javascript, 'ext' => 'js' ];
-        }
+        $this->scriptsInject();
         
         return $this;
     }
@@ -197,7 +290,9 @@ class Parser {
         
         foreach ($elements as $element) {
             
-            if (!empty($params['localPath']) AND strpos($element->getAttribute('href'), $params['localPath']) === false) {
+            $href = $element->getAttribute('href');
+            
+            if (!empty($params['localPath']) AND strpos($href, $params['localPath']) === false) {
                 continue;
             }
             
@@ -205,8 +300,11 @@ class Parser {
                 continue;    
             }            
             
+            $da = explode('.', $href);            
+            $ext = end($da);
+            
             $element->parentNode->removeChild($element);
-            $this->scripts[] = [ 'type' => 'stylesheet', 'file' => $element->getAttribute('href'), 'ext' => 'css' ];
+            $this->scripts[] = [ 'type' => 'stylesheet', 'file' => $href, 'ext' => $ext ];
         }        
        
         $this->html = $document->saveHTML();
@@ -218,10 +316,20 @@ class Parser {
     /**
      * 
      */
-    public function scriptsInject ( ) {
+    public function scriptsInject ( array $params = null ) {
         
         foreach ($this->scripts as $script) {
-                        
+            
+            
+            if (!isset($script['file'])) {
+                
+                if (!is_callable($converter = $this->pathConverterToPublic)) {
+                    throw new \Exception('ExceptionNeedPublicPathConverter');
+                }
+                
+                $script['file'] = $converter($script['path']);
+            }
+                                    
             switch ( $script['type'] ) {
                 
                 case 'stylesheet':                   
@@ -237,7 +345,6 @@ class Parser {
                 break;
             }
             
-            
             if (strpos($this->html, '</head>') !== false) {
                 $this->html = str_replace('</head>', PHP_EOL . $tag . PHP_EOL . '</head>', $this->html);
             }
@@ -245,6 +352,8 @@ class Parser {
                 $this->html .= PHP_EOL . $tag;
             }
         }
+        
+        $this->scriptsClear();
         
         return $this;
     }

@@ -45,7 +45,7 @@ class Request {
 		$header = substr($result, 0, $header_size);
 		$body = substr($result, $header_size);
 		
-		return new Response($header, $body);
+		return new Response(explode("\n\r", $header), $body);
 	}
 }
 ?>
