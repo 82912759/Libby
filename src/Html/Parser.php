@@ -264,6 +264,7 @@ class Parser {
         libxml_use_internal_errors(true);
         
         $html = (substr($this->html, 0, 5) != '<!DOC') ? '<div>' . $this->html . '</div>' : $this->html; 
+           
         
         $document->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'), LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
         libxml_clear_errors();  
@@ -271,20 +272,28 @@ class Parser {
         $xpath = new \DOMXPath($document);
         
         $elements = $xpath->query('//script');
-               
+        $removeNodes = [];
+        
         foreach ($elements as $element) {
-            
-            if (empty($element->getAttribute('src'))) {
+                        
+            if (empty($element->getAttribute('src')) or $element->hasAttribute('data-nocache')) {                
                 continue;    
             }
             
             if (!empty($params['localPath']) AND strpos($element->getAttribute('src'), $params['localPath']) === false) {
                 continue;
             }
-                        
+            
+            $removeNodes[] = $element;
+        }
+        
+        
+        foreach ($removeNodes as $element) {
+            
             $element->parentNode->removeChild($element);
-            $this->scripts[] = [ 'type' => 'javascript', 'file' => $element->getAttribute('src'), 'ext' => 'js' ];
+            $this->scripts[] = [ 'type' => 'javascript', 'file' => $element->getAttribute('src'), 'ext' => 'js' ];            
         }        
+        
         
         $elements = $xpath->query('//link');
         
@@ -308,7 +317,8 @@ class Parser {
         }        
        
         $this->html = $document->saveHTML();
-                        
+        
+        
         return $this;        
     }
     
