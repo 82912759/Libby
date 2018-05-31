@@ -53,7 +53,7 @@ class Url {
         
         $data = parse_url($url);
         
-        $this->scheme = $data['scheme'];
+        $this->scheme = (!empty($data['scheme']) ? $data['scheme'] : null);
         $this->host = $data['host'];
         $this->path = $data['path'];
         
