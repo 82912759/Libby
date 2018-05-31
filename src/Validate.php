@@ -71,9 +71,24 @@ class Validate {
 			];
 		}
 						
-		foreach ($data as $key) {
+		foreach ($data as $index => $key) {
 				
-			if (empty($_POST[$key])) {
+		    if (is_array($key)) {
+		        
+		        foreach ($key as $fieldKey) {
+		            
+		            if (empty($_POST[$index][$fieldKey])) {
+		                throw new \Libby\Exception\Input('MissingPostData');
+		            }
+		        }		        
+		    }
+		    elseif (preg_match('#^([a-z0-9]{1,})\.([a-z0-9]{1,})$#i', $key, $match)) {
+		        
+		        if (empty($_POST[$match[1]][$match[2]])) {
+		            throw new \Libby\Exception\Input('MissingPostData');
+		        }
+		    }
+		    elseif (empty($_POST[$key])) {
 				throw new \Libby\Exception\Input('MissingPostData');
 			}
 		}
