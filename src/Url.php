@@ -24,6 +24,15 @@ class Url {
     }
     
     
+    /**
+     * 
+     */
+    public function __toString ( ) {
+        
+        return $this->toString();        
+    }
+    
+    
     //
     // Base methods
     //
